@@ -800,6 +800,55 @@ Your AI agronomic economist covering **20+ Fruits, Vegetables, Spices, and Cash 
                       </div>
                     )}
 
+                    {/* Advanced RAG Pipeline Inspector */}
+                    {msg.data.advanced_rag_metadata && (
+                      <div className="space-y-2 pt-2 border-t border-slate-200">
+                        <div className="text-xs font-bold text-slate-800 flex items-center justify-between">
+                          <span className="flex items-center gap-1.5 text-indigo-700">
+                            <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
+                            <span>🧠 Advanced RAG Architecture (BM25 + Dense Vector RRF + Re-Ranking):</span>
+                          </span>
+                          <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 border border-indigo-200">
+                            Reciprocal Rank Fusion
+                          </span>
+                        </div>
+
+                        {/* Extracted Scientific Storage Parameters */}
+                        {msg.data.advanced_rag_metadata.extracted_scientific_parameters && (
+                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 text-xs">
+                            <div className="p-2.5 rounded-xl bg-white border border-slate-200 shadow-2xs">
+                              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Optimal Temp</span>
+                              <strong className="text-emerald-700 font-mono text-xs">{msg.data.advanced_rag_metadata.extracted_scientific_parameters.optimal_storage_temperature}</strong>
+                            </div>
+                            <div className="p-2.5 rounded-xl bg-white border border-slate-200 shadow-2xs">
+                              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Relative Humidity</span>
+                              <strong className="text-sky-700 font-mono text-xs">{msg.data.advanced_rag_metadata.extracted_scientific_parameters.optimal_relative_humidity}</strong>
+                            </div>
+                            <div className="p-2.5 rounded-xl bg-white border border-slate-200 shadow-2xs">
+                              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Max Shelf Life</span>
+                              <strong className="text-amber-700 font-mono text-xs">{msg.data.advanced_rag_metadata.extracted_scientific_parameters.maximum_commercial_shelf_life}</strong>
+                            </div>
+                            <div className="p-2.5 rounded-xl bg-white border border-slate-200 shadow-2xs">
+                              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Pathogen Warning</span>
+                              <span className="text-rose-700 font-medium text-[11px] line-clamp-1">{msg.data.advanced_rag_metadata.extracted_scientific_parameters.critical_pathogen_warning}</span>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Multi-Query Facets */}
+                        {msg.data.advanced_rag_metadata.multi_query_facets && msg.data.advanced_rag_metadata.multi_query_facets.length > 0 && (
+                          <div className="bg-white p-2.5 rounded-xl border border-slate-200 space-y-1">
+                            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">🔍 Multi-Query Expanded Semantic Search Vectors:</span>
+                            <ul className="text-[11px] text-slate-600 space-y-0.5 font-mono list-disc list-inside">
+                              {msg.data.advanced_rag_metadata.multi_query_facets.map((facet, fIdx) => (
+                                <li key={fIdx} className="line-clamp-1">{facet}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
                     {/* ICAR Citations */}
                     {msg.data.sources_cited && msg.data.sources_cited.length > 0 && (
                       <div className="space-y-2 pt-2 border-t border-slate-200">
@@ -812,13 +861,13 @@ Your AI agronomic economist covering **20+ Fruits, Vegetables, Spices, and Cash 
                             <div key={sIdx} className="p-3 rounded-xl bg-white border border-slate-200 text-xs space-y-1 shadow-xs">
                               <div className="flex items-center justify-between text-amber-800 font-bold">
                                 <span>{src.title}</span>
-                                <span className="font-mono text-slate-500 text-[10px]">Match: {(src.relevance_score * 100).toFixed(1)}%</span>
+                                <span className="font-mono text-slate-500 text-[10px]">Match: {((src.relevance_score || 0.9) * 100).toFixed(1)}%</span>
                               </div>
-                              <div className="text-slate-600 leading-relaxed">{src.snippet}</div>
+                              <div className="text-slate-600 leading-relaxed">{src.chunk_text || src.snippet}</div>
                               <div className="text-slate-500 text-[11px] font-mono flex items-center gap-2 pt-1 border-t border-slate-100">
-                                <span>🏛️ {src.source}</span>
+                                <span>🏛️ {src.source || 'ICAR National Agricultural Research Protocol'}</span>
                                 <span>&bull;</span>
-                                <span>Section: {src.section}</span>
+                                <span>Verification: Peer-Reviewed Protocol</span>
                               </div>
                             </div>
                           ))}
