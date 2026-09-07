@@ -1,0 +1,27 @@
+# Node & Frontend
+node_modules/
+dist/
+dist-ssr/
+*.local
+.env
+.env.*
+.vercel
+
+# Python & Django
+__pycache__/
+*.py[cod]
+*.class
+*.sqlite3
+*.sqlite3-journal
+db.sqlite3
+venv/
+env/
+.venv/
+chroma_db/
+*.log
+
+# OS & Editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
