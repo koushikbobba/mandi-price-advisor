@@ -427,7 +427,7 @@ Your AI agronomic economist covering **20+ Fruits, Vegetables, Spices, and Cash 
 
     let bannerConfig = {
       title: 'Action Advisory',
-      bg: 'bg-emerald-50 border-emerald-300 text-emerald-950',
+      bg: '',
       badge: 'bg-emerald-600 text-white',
       desc: 'Market conditions favorable for realization.',
       badgeText: '⚡ SELL NOW (High Spot Realization)'
@@ -436,7 +436,7 @@ Your AI agronomic economist covering **20+ Fruits, Vegetables, Spices, and Cash 
     if (action === 'HOLD') {
       bannerConfig = {
         title: 'Holding Advisory',
-        bg: 'bg-amber-50 border-amber-300 text-amber-950',
+        bg: '',
         badge: 'bg-amber-600 text-white',
         desc: 'Hold for upcoming off-season festive peak window.',
         badgeText: '⏳ HOLD FOR PEAK (Supply Deficit Forecasted)'
@@ -444,25 +444,33 @@ Your AI agronomic economist covering **20+ Fruits, Vegetables, Spices, and Cash 
     } else if (action === 'STAGGER_SELL') {
       bannerConfig = {
         title: 'Tranche Dispatch Advisory',
-        bg: 'bg-sky-50 border-sky-300 text-sky-950',
+        bg: '',
         badge: 'bg-sky-600 text-white',
         desc: 'Dispatch 40% immediate harvest, retain 60% in cold storage for post-glut prices.',
         badgeText: '📊 STAGGERED 3-TRANCHE DISPATCH'
       };
     }
 
+    const bStyles = {
+      SELL_NOW:     {bg:'rgba(16,185,129,0.1)', border:'rgba(16,185,129,0.3)', badgeBg:'rgba(16,185,129,0.2)', badgeColor:'#6ee7b7'},
+      HOLD:         {bg:'rgba(251,191,36,0.08)', border:'rgba(251,191,36,0.3)', badgeBg:'rgba(251,191,36,0.15)', badgeColor:'#fde68a'},
+      STAGGER_SELL: {bg:'rgba(125,211,252,0.08)', border:'rgba(125,211,252,0.25)', badgeBg:'rgba(125,211,252,0.15)', badgeColor:'#7dd3fc'},
+    }[action] || {bg:'rgba(99,102,241,0.08)', border:'rgba(99,102,241,0.25)', badgeBg:'rgba(99,102,241,0.12)', badgeColor:'#a5b4fc'};
     return (
-      <div className={`rounded-2xl p-4 border ${bannerConfig.bg} space-y-2 shadow-xs`}>
+      <div className="rounded-xl p-3.5 space-y-2"
+           style={{background:bStyles.bg, border:`1px solid ${bStyles.border}`}}>
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <span className={`px-3 py-1 rounded-full text-xs font-bold ${bannerConfig.badge}`}>
+          <span className="px-2.5 py-1 rounded-lg text-xs font-bold"
+                style={{background:bStyles.badgeBg, color:bStyles.badgeColor, fontFamily:"'Space Grotesk',sans-serif"}}>
             {bannerConfig.badgeText}
           </span>
-          <span className="text-[11px] font-semibold text-slate-600 font-mono flex items-center gap-1">
-            <Award className="w-3.5 h-3.5 text-amber-600" />
-            Confidence: {data.confidence || 'HIGH'} (Agmarknet + ICAR)
+          <span className="text-[11px] font-semibold flex items-center gap-1"
+                style={{color:'rgba(100,116,139,0.9)', fontFamily:"'JetBrains Mono',monospace"}}>
+            <Award className="w-3 h-3" style={{color:'#fbbf24'}} />
+            Conf: {data.confidence || 'HIGH'} · Agmarknet + ICAR
           </span>
         </div>
-        <p className="text-xs text-slate-700 leading-relaxed font-medium">
+        <p className="text-xs leading-relaxed" style={{color:'rgba(148,163,184,0.8)', fontFamily:"'Inter',sans-serif"}}>
           {bannerConfig.desc}
         </p>
       </div>
@@ -472,410 +480,426 @@ Your AI agronomic economist covering **20+ Fruits, Vegetables, Spices, and Cash 
   const getActionBadge = (action) => {
     switch (action) {
       case 'SELL_NOW':
-        return <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">⚡ SELL NOW</span>;
+        return <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold font-bold">⚡ SELL NOW</span>;
       case 'HOLD':
-        return <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-800 border border-amber-300">⏳ HOLD FOR PEAK</span>;
+        return <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold font-bold">⏳ HOLD FOR PEAK</span>;
       case 'STAGGER_SELL':
-        return <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold bg-blue-100 text-blue-800 border border-blue-300">📊 STAGGER DISPATCH</span>;
+        return <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold font-bold">📊 STAGGER DISPATCH</span>;
       default:
-        return <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-800 border border-slate-300">ℹ️ ADVISORY</span>;
+        return <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold font-bold">ℹ️ ADVISORY</span>;
     }
   };
 
   const availableCities = STATE_MANDI_MAP[selectedState] || [];
 
   return (
-    <div className="max-w-5xl mx-auto space-y-6">
-      
-      {/* 1. Interactive State, City/Mandi & Crop Dropdown Query Builder */}
-      <div className="bg-white border border-slate-200/90 rounded-3xl p-5 shadow-xs space-y-4">
-        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-3">
-          <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-2xl bg-emerald-100/90 text-emerald-800 ring-2 ring-emerald-200">
-              <SlidersHorizontal className="w-4 h-4" />
+    <div className="max-w-5xl mx-auto space-y-5">
+
+      {/* ── SECTION 1: Dropdown Query Builder ── */}
+      <div className="glass-card rounded-2xl p-5 space-y-4"
+           style={{background:'rgba(15,23,42,0.75)', border:'1px solid rgba(16,185,129,0.18)', backdropFilter:'blur(18px)'}}>
+
+        {/* Header */}
+        <div className="flex flex-wrap items-center justify-between gap-3 pb-3"
+             style={{borderBottom:'1px solid rgba(255,255,255,0.06)'}}>
+          <div className="flex items-center gap-3">
+            <div className="relative">
+              <div className="w-9 h-9 rounded-xl flex items-center justify-center"
+                   style={{background:'linear-gradient(135deg,#065f46,#047857)', boxShadow:'0 0 16px rgba(16,185,129,0.4)'}}>
+                <SlidersHorizontal className="w-4 h-4 text-emerald-300" />
+              </div>
             </div>
             <div>
-              <h2 className="text-sm font-extrabold text-slate-900">
-                Interactive Mandi & Crop Decision Selector
+              <h2 style={{fontFamily:"'Space Grotesk',sans-serif"}}
+                  className="text-sm font-bold text-white tracking-tight">
+                Mandi &amp; Crop Decision Selector
               </h2>
-              <p className="text-xs text-slate-500">
-                Select your State, Mandi City & Crop to generate instant real-time advisory suggestions
+              <p className="text-xs mt-0.5" style={{color:'rgba(148,163,184,0.8)'}}>
+                Choose your State, Mandi &amp; Crop — get instant AI advisory
               </p>
             </div>
           </div>
-          <span className="text-[11px] font-bold text-emerald-800 bg-emerald-100/80 px-3 py-1 rounded-full border border-emerald-300 flex items-center gap-1">
-            <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-            150+ Mandis across AP, TG, TN, KA & North India
+          <span className="text-[11px] font-semibold px-3 py-1 rounded-full flex items-center gap-1.5"
+                style={{background:'rgba(16,185,129,0.12)', border:'1px solid rgba(16,185,129,0.3)', color:'#6ee7b7'}}>
+            <ShieldCheck className="w-3 h-3" />
+            150+ APMCs · AP · TG · TN · KA
           </span>
         </div>
 
-        {/* 3 Linked Dropdowns */}
+        {/* Dropdowns */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          {/* State Dropdown */}
-          <div>
-            <label className="text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1.5 block">
-              1. Select State
-            </label>
-            <select
-              value={selectedState}
-              onChange={(e) => handleStateChange(e.target.value)}
-              className="w-full bg-slate-50 hover:bg-slate-100/90 border border-slate-300 rounded-xl px-3.5 py-2.5 text-xs sm:text-sm font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all cursor-pointer shadow-xs"
-            >
-              {Object.keys(STATE_MANDI_MAP).map(st => (
-                <option key={st} value={st}>{st}</option>
-              ))}
-            </select>
-          </div>
-
-          {/* City / Mandi Dropdown */}
-          <div>
-            <label className="text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1.5 block">
-              2. Select Mandi / City
-            </label>
-            <select
-              value={selectedCity}
-              onChange={(e) => setSelectedCity(e.target.value)}
-              className="w-full bg-slate-50 hover:bg-slate-100/90 border border-slate-300 rounded-xl px-3.5 py-2.5 text-xs sm:text-sm font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all cursor-pointer shadow-xs"
-            >
-              {availableCities.map(ct => (
-                <option key={ct} value={ct}>{ct}</option>
-              ))}
-            </select>
-          </div>
-
-          {/* Crop Dropdown */}
-          <div>
-            <label className="text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1.5 block">
-              3. Select Crop
-            </label>
-            <select
-              value={selectedCrop}
-              onChange={(e) => setSelectedCrop(e.target.value)}
-              className="w-full bg-slate-50 hover:bg-slate-100/90 border border-slate-300 rounded-xl px-3.5 py-2.5 text-xs sm:text-sm font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all cursor-pointer shadow-xs"
-            >
-              {CROPS_WITH_ICONS.map(cr => (
-                <option key={cr.name} value={cr.name}>{cr.icon} {cr.label}</option>
-              ))}
-            </select>
-          </div>
+          {[
+            { label: '1. State', value: selectedState, onChange: (v) => handleStateChange(v),
+              options: Object.keys(STATE_MANDI_MAP).map(s => ({v:s,l:s})) },
+            { label: '2. Mandi / City', value: selectedCity, onChange: (v) => setSelectedCity(v),
+              options: availableCities.map(c => ({v:c,l:c})) },
+            { label: '3. Crop', value: selectedCrop, onChange: (v) => setSelectedCrop(v),
+              options: CROPS_WITH_ICONS.map(cr => ({v:cr.name,l:`${cr.icon} ${cr.label}`})) },
+          ].map(({label,value,onChange,options}) => (
+            <div key={label}>
+              <label className="block text-[10px] font-bold uppercase tracking-widest mb-1.5"
+                     style={{color:'rgba(148,163,184,0.7)', fontFamily:"'Space Grotesk',sans-serif"}}>
+                {label}
+              </label>
+              <select value={value} onChange={e => onChange(e.target.value)}
+                className="w-full rounded-xl px-3.5 py-2.5 text-xs font-semibold cursor-pointer transition-all focus:outline-none"
+                style={{background:'rgba(30,41,59,0.9)', border:'1px solid rgba(255,255,255,0.1)',
+                        color:'#e2e8f0', fontFamily:"'Inter',sans-serif",
+                        boxShadow:'inset 0 1px 2px rgba(0,0,0,0.3)'}}>
+                {options.map(o => <option key={o.v} value={o.v}>{o.l}</option>)}
+              </select>
+            </div>
+          ))}
         </div>
 
-        {/* Dynamic Contextual Smart Suggestions */}
-        <div className="pt-2">
-          <div className="text-xs font-bold text-slate-700 mb-2 flex items-center justify-between">
-            <span className="flex items-center gap-1.5">
-              <Lightbulb className="w-3.5 h-3.5 text-amber-500" />
-              <span>Click any suggested question for <strong>{selectedCrop}</strong> in <strong>{selectedCity}, {selectedState}</strong>:</span>
+        {/* Smart Suggestions */}
+        <div>
+          <div className="flex items-center justify-between mb-2.5">
+            <span className="flex items-center gap-1.5 text-xs font-semibold"
+                  style={{color:'rgba(209,213,219,0.85)', fontFamily:"'Space Grotesk',sans-serif"}}>
+              <Lightbulb className="w-3.5 h-3.5" style={{color:'#fbbf24'}} />
+              Suggestions for <span style={{color:'#34d399'}}>&nbsp;{selectedCrop}&nbsp;</span>
+              in <span style={{color:'#7dd3fc'}}>&nbsp;{selectedCity}</span>
             </span>
-            <button
-              onClick={() => onOpenPriceExplorer && onOpenPriceExplorer(selectedCrop)}
-              className="text-xs text-emerald-700 hover:text-emerald-900 font-bold flex items-center gap-1 hover:underline"
-            >
+            <button onClick={() => onOpenPriceExplorer && onOpenPriceExplorer(selectedCrop)}
+              className="flex items-center gap-1 text-[11px] font-bold transition-all hover:opacity-80"
+              style={{color:'#10b981', fontFamily:"'Space Grotesk',sans-serif"}}>
               <BarChart2 className="w-3.5 h-3.5" />
-              <span>View Price Trends & ROI for {selectedCrop} &rarr;</span>
+              Price Trends &amp; ROI →
             </button>
           </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-            {dynamicSuggestions.map((sug, sIdx) => (
-              <button
-                key={sIdx}
-                onClick={() => handlePresetClick(sug.query, sug.label)}
-                className={`text-left p-3.5 rounded-2xl border text-xs transition-all group flex items-start justify-between gap-2 shadow-xs hover:shadow ${
-                  activeClickedPrompt === sug.query
-                    ? 'bg-emerald-100 border-emerald-500 text-emerald-950 font-semibold ring-2 ring-emerald-300'
-                    : 'bg-gradient-to-br from-emerald-50/70 to-teal-50/50 hover:from-emerald-100/80 hover:to-teal-100/70 border-emerald-200/90 text-slate-800'
-                }`}
-              >
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            {getDynamicSuggestions().map((sug, sIdx) => (
+              <button key={sIdx} onClick={() => handlePresetClick(sug.query, sug.label)}
+                className="text-left p-3.5 rounded-xl border transition-all group flex items-start justify-between gap-2"
+                style={activeClickedPrompt === sug.query
+                  ? {background:'rgba(16,185,129,0.15)', border:'1px solid rgba(16,185,129,0.5)', boxShadow:'0 0 12px rgba(16,185,129,0.2)'}
+                  : {background:'rgba(30,41,59,0.6)', border:'1px solid rgba(255,255,255,0.07)'}}>
                 <div>
-                  <div className="font-bold text-emerald-900 group-hover:text-emerald-950 mb-1 flex items-center gap-1">
-                    <span>{sug.label}</span>
+                  <div className="font-bold text-xs mb-0.5"
+                       style={{color: activeClickedPrompt===sug.query ? '#6ee7b7' : '#a7f3d0',
+                               fontFamily:"'Space Grotesk',sans-serif"}}>
+                    {sug.label}
                   </div>
-                  <div className="text-slate-600 text-[11px] line-clamp-2 leading-relaxed">
+                  <div className="text-[11px] leading-relaxed line-clamp-2" style={{color:'rgba(148,163,184,0.7)'}}>
                     {sug.query}
                   </div>
                 </div>
-                <ArrowRight className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5 opacity-60 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
+                <ArrowRight className="w-4 h-4 shrink-0 mt-0.5 opacity-40 group-hover:opacity-100 group-hover:translate-x-1 transition-all"
+                            style={{color:'#10b981'}} />
               </button>
             ))}
           </div>
         </div>
       </div>
 
-      {/* 2. Categorized Regional & Language Presets */}
-      <div className="bg-white border border-slate-200 rounded-3xl p-4 shadow-xs">
-        <div className="flex items-center justify-between gap-2 mb-3 pb-2 border-b border-slate-100">
-          <span className="text-xs font-bold text-slate-600 uppercase tracking-wider flex items-center gap-2">
-            <Sparkles className="w-4 h-4 text-emerald-600" />
-            Quick Advisory Presets by Region & Language (Click to Ask Immediately)
+      {/* ── SECTION 2: Regional Presets ── */}
+      <div className="rounded-2xl p-4 space-y-3"
+           style={{background:'rgba(15,23,42,0.65)', border:'1px solid rgba(255,255,255,0.07)', backdropFilter:'blur(12px)'}}>
+        <div className="flex items-center justify-between pb-2" style={{borderBottom:'1px solid rgba(255,255,255,0.05)'}}>
+          <span className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest"
+                style={{color:'rgba(148,163,184,0.7)', fontFamily:"'Space Grotesk',sans-serif"}}>
+            <Sparkles className="w-3.5 h-3.5" style={{color:'#10b981'}} />
+            Regional Quick Presets
           </span>
-          <span className="text-xs text-slate-400 hidden sm:inline">Telugu • Tamil • Hindi • Kannada • English</span>
+          <span className="text-[11px]" style={{color:'rgba(100,116,139,0.8)'}}>
+            Telugu · Tamil · Hindi · Kannada · English
+          </span>
         </div>
-
-        <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-thin">
+        {/* Tab Bar */}
+        <div className="flex gap-1.5 overflow-x-auto pb-1">
           {CATEGORIZED_PRESETS.map((cat, idx) => (
-            <button
-              key={cat.category}
-              onClick={() => setActivePresetTab(idx)}
-              className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all ${
-                activePresetTab === idx
-                  ? 'bg-emerald-600 text-white font-bold shadow-xs'
-                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200 hover:text-slate-900'
-              }`}
-            >
+            <button key={cat.category} onClick={() => setActivePresetTab(idx)}
+              className="px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all"
+              style={activePresetTab === idx
+                ? {background:'linear-gradient(135deg,#065f46,#047857)', color:'#d1fae5',
+                   fontFamily:"'Space Grotesk',sans-serif", boxShadow:'0 2px 8px rgba(16,185,129,0.3)'}
+                : {background:'rgba(30,41,59,0.7)', color:'rgba(148,163,184,0.8)', fontFamily:"'Space Grotesk',sans-serif"}}>
               {cat.category}
             </button>
           ))}
         </div>
-
-        {/* Preset Prompt Buttons */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 mt-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
           {CATEGORIZED_PRESETS[activePresetTab].prompts.map((p, idx) => (
-            <button
-              key={idx}
-              onClick={() => handlePresetClick(p.query, p.label)}
-              className={`text-left p-3 rounded-2xl border text-xs transition-all group ${
-                activeClickedPrompt === p.query
-                  ? 'bg-emerald-100 border-emerald-500 text-emerald-950 font-semibold ring-2 ring-emerald-300'
-                  : 'bg-slate-50 hover:bg-emerald-50/80 border-slate-200 hover:border-emerald-300 text-slate-700 hover:text-emerald-900'
-              }`}
-            >
-              <div className="font-semibold text-emerald-700 group-hover:underline mb-0.5">{p.label}</div>
-              <div className="text-slate-500 text-[11px] line-clamp-1">{p.query}</div>
+            <button key={idx} onClick={() => handlePresetClick(p.query, p.label)}
+              className="text-left p-3 rounded-xl border transition-all group"
+              style={activeClickedPrompt === p.query
+                ? {background:'rgba(16,185,129,0.12)', border:'1px solid rgba(16,185,129,0.4)'}
+                : {background:'rgba(30,41,59,0.5)', border:'1px solid rgba(255,255,255,0.06)'}}>
+              <div className="font-semibold text-xs mb-0.5 group-hover:underline"
+                   style={{color:'#6ee7b7', fontFamily:"'Space Grotesk',sans-serif"}}>{p.label}</div>
+              <div className="text-[11px] line-clamp-1" style={{color:'rgba(148,163,184,0.65)'}}>{p.query}</div>
             </button>
           ))}
         </div>
       </div>
 
-      {/* 3. Conversation Stream */}
-      <div className="space-y-4 min-h-[250px]">
+      {/* ── SECTION 3: Conversation Stream ── */}
+      <div className="space-y-4 min-h-[200px]">
         {conversation.map((msg, idx) => (
-          <div key={idx} className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
+          <div key={idx} className={`flex flex-col float-in ${msg.role==='user' ? 'items-end' : 'items-start'}`}
+               style={{animationDelay:`${idx*0.04}s`}}>
+
             {msg.role === 'user' ? (
-              <div className="max-w-2xl bg-emerald-600 text-white px-5 py-3 rounded-2xl rounded-tr-sm shadow-sm font-semibold text-sm">
+              <div className="max-w-2xl px-5 py-3 rounded-2xl rounded-tr-sm text-sm font-medium"
+                   style={{background:'linear-gradient(135deg,#065f46,#047857)',
+                           color:'#d1fae5', fontFamily:"'Inter',sans-serif",
+                           boxShadow:'0 4px 20px rgba(16,185,129,0.25)'}}>
                 {msg.text}
               </div>
             ) : (
-              <div className="w-full bg-white border border-slate-200 rounded-3xl p-6 shadow-xs space-y-4">
-                {/* Header Metadata */}
-                <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-100">
+              <div className="w-full rounded-2xl overflow-hidden"
+                   style={{background:'rgba(15,23,42,0.8)', border:'1px solid rgba(16,185,129,0.2)',
+                           backdropFilter:'blur(16px)', boxShadow:'0 8px 32px rgba(0,0,0,0.4)'}}>
+
+                {/* AI Header Bar */}
+                <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-3.5"
+                     style={{borderBottom:'1px solid rgba(255,255,255,0.06)',
+                             background:'rgba(6,95,70,0.15)'}}>
                   <div className="flex items-center gap-3">
-                    <div className="p-2.5 rounded-2xl bg-emerald-100 text-emerald-700 ring-2 ring-emerald-200/60">
-                      <Sparkles className="w-5 h-5" />
+                    {/* Animated AI orb */}
+                    <div className="relative w-9 h-9 shrink-0">
+                      <div className="absolute inset-0 rounded-full ai-glow"
+                           style={{background:'linear-gradient(135deg,#064e3b,#065f46)',
+                                   border:'1px solid rgba(16,185,129,0.4)'}} />
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <Sparkles className="w-4 h-4 text-emerald-400" />
+                      </div>
                     </div>
                     <div>
                       <div className="flex items-center gap-2">
-                        <span className="font-extrabold text-slate-900 text-sm">AI Mandi Advisor</span>
-                        <span className="text-xs px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700 font-mono font-bold">
+                        <span className="font-bold text-sm shimmer-text"
+                              style={{fontFamily:"'Space Grotesk',sans-serif"}}>
+                          Kisan AI Advisor
+                        </span>
+                        <span className="text-[10px] px-2 py-0.5 rounded-full font-bold"
+                              style={{background:'rgba(16,185,129,0.15)', border:'1px solid rgba(16,185,129,0.3)',
+                                      color:'#6ee7b7', fontFamily:"'JetBrains Mono',monospace"}}>
                           {msg.data.routed_category}
                         </span>
                       </div>
-                      <div className="text-xs text-slate-500 flex items-center gap-2 mt-0.5 font-medium">
-                        <Clock className="w-3 h-3 text-slate-400" />
-                        <span>{msg.data.execution_time_ms} ms</span>
-                        <span>•</span>
-                        <Globe className="w-3 h-3 text-slate-400" />
-                        <span>Language: {msg.data.detected_language?.toUpperCase()}</span>
+                      <div className="flex items-center gap-2 mt-0.5 text-[11px]"
+                           style={{color:'rgba(100,116,139,0.9)', fontFamily:"'JetBrains Mono',monospace"}}>
+                        <Clock className="w-3 h-3" />
+                        <span>{msg.data.execution_time_ms}ms</span>
+                        <span style={{opacity:0.4}}>·</span>
+                        <Globe className="w-3 h-3" />
+                        <span>lang:{msg.data.detected_language?.toUpperCase()}</span>
                       </div>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2">
-                    {/* Audio Speaker Button (Text to Speech) */}
-                    <button
-                      onClick={() => speakText(msg.data.answer, idx, msg.data.detected_language)}
-                      title={speakingIdx === idx ? 'Stop Audio Readout' : 'Listen to Answer Aloud (Voice Output)'}
-                      className={`flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
-                        speakingIdx === idx
-                          ? 'bg-rose-500 text-white animate-pulse shadow-md shadow-rose-500/30'
-                          : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200'
-                      }`}
-                    >
-                      {speakingIdx === idx ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4 text-emerald-600" />}
-                      <span>{speakingIdx === idx ? 'Stop Voice' : 'Listen Audio'}</span>
+                  {/* Action Toolbar */}
+                  <div className="flex items-center gap-1.5">
+                    <button onClick={() => speakText(msg.data.answer, idx, msg.data.detected_language)}
+                      className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all"
+                      style={speakingIdx===idx
+                        ? {background:'rgba(239,68,68,0.2)', border:'1px solid rgba(239,68,68,0.4)', color:'#fca5a5'}
+                        : {background:'rgba(16,185,129,0.1)', border:'1px solid rgba(16,185,129,0.25)', color:'#6ee7b7'}}>
+                      {speakingIdx===idx ? <VolumeX className="w-3.5 h-3.5" /> : <Volume2 className="w-3.5 h-3.5" />}
+                      <span className="hidden sm:inline">{speakingIdx===idx ? 'Stop' : 'Listen'}</span>
                     </button>
 
                     {getActionBadge(msg.data.decision_action)}
 
-                    <button
-                      onClick={() => handlePrintSlip(msg.data)}
-                      title="Download / Print Official APMC Advisory Slip (PDF)"
-                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 hover:text-slate-900 text-xs font-semibold transition-all border border-slate-300 shadow-2xs"
-                    >
-                      <Printer className="w-3.5 h-3.5 text-slate-600" />
-                      <span className="hidden sm:inline">Export Slip</span>
+                    <button onClick={() => handlePrintSlip(msg.data)}
+                      className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all"
+                      style={{background:'rgba(30,41,59,0.8)', border:'1px solid rgba(255,255,255,0.1)', color:'#94a3b8'}}>
+                      <Printer className="w-3.5 h-3.5" />
+                      <span className="hidden sm:inline">Export</span>
                     </button>
 
-                    <button
-                      onClick={() => copyToClipboard(msg.data.answer, idx)}
-                      title="Copy Answer"
-                      className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-slate-900 transition-colors"
-                    >
-                      {copiedIdx === idx ? <Check className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4" />}
+                    <button onClick={() => copyToClipboard(msg.data.answer, idx)}
+                      className="p-1.5 rounded-lg transition-all"
+                      style={{background:'rgba(30,41,59,0.8)', border:'1px solid rgba(255,255,255,0.08)', color:'#94a3b8'}}>
+                      {copiedIdx===idx ? <Check className="w-3.5 h-3.5" style={{color:'#34d399'}} /> : <Copy className="w-3.5 h-3.5" />}
                     </button>
                   </div>
                 </div>
 
-                {/* Visual Recommendation Banner if action present */}
-                {renderDecisionBanner(msg.data)}
+                {/* Body */}
+                <div className="px-5 py-4 space-y-4">
+                  {renderDecisionBanner(msg.data)}
 
-                {/* Primary Structured Answer */}
-                <div className="prose max-w-none text-slate-800 text-sm leading-relaxed whitespace-pre-line font-normal">
-                  {msg.data.answer}
-                </div>
+                  {/* Answer Text */}
+                  <div className="text-sm leading-relaxed whitespace-pre-line"
+                       style={{color:'#cbd5e1', fontFamily:"'Inter',sans-serif", lineHeight:'1.75'}}>
+                    {msg.data.answer}
+                  </div>
 
-                {/* Reasoning Points */}
-                {msg.data.reasoning && msg.data.reasoning.length > 0 && (
-                  <div className="bg-slate-50 rounded-2xl p-4 border border-slate-200/80 space-y-1.5">
-                    <div className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
-                      <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                      Key Decision Factors & Agronomic Evidence:
+                  {/* Reasoning Cards */}
+                  {msg.data.reasoning && msg.data.reasoning.length > 0 && (
+                    <div className="rounded-xl p-4 space-y-2"
+                         style={{background:'rgba(30,41,59,0.6)', border:'1px solid rgba(255,255,255,0.06)'}}>
+                      <div className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest mb-2"
+                           style={{color:'#6ee7b7', fontFamily:"'Space Grotesk',sans-serif"}}>
+                        <CheckCircle2 className="w-3.5 h-3.5" />
+                        Key Decision Factors
+                      </div>
+                      <ul className="space-y-1.5">
+                        {msg.data.reasoning.map((r, rIdx) => (
+                          <li key={rIdx} className="flex items-start gap-2 text-xs leading-relaxed"
+                              style={{color:'rgba(203,213,225,0.85)', fontFamily:"'Inter',sans-serif"}}>
+                            <span style={{color:'#10b981', fontWeight:700, marginTop:2}}>▸</span>
+                            <span>{r}</span>
+                          </li>
+                        ))}
+                      </ul>
                     </div>
-                    <ul className="space-y-1.5 pt-1">
-                      {msg.data.reasoning.map((r, rIdx) => (
-                        <li key={rIdx} className="text-xs text-slate-700 flex items-start gap-2 leading-relaxed">
-                          <span className="text-emerald-600 font-bold mt-0.5">•</span>
-                          <span>{r}</span>
-                        </li>
-                      ))}
-                    </ul>
+                  )}
+
+                  {/* Toggle */}
+                  <div className="flex items-center justify-between pt-2"
+                       style={{borderTop:'1px solid rgba(255,255,255,0.05)'}}>
+                    <button onClick={() => toggleDetails(idx)}
+                      className="flex items-center gap-1.5 text-xs font-semibold transition-all hover:opacity-80"
+                      style={{color:'#10b981', fontFamily:"'Space Grotesk',sans-serif"}}>
+                      <Code2 className="w-3.5 h-3.5" />
+                      {expandedDetails[idx] ? 'Hide Data Sources' : 'View APMC Records & ICAR Sources'}
+                      {expandedDetails[idx] ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                    </button>
+                    <span className="text-[11px] font-bold"
+                          style={{color:'rgba(100,116,139,0.8)', fontFamily:"'JetBrains Mono',monospace"}}>
+                      conf: {msg.data.confidence}
+                    </span>
                   </div>
-                )}
 
-                {/* Mandi Records & Citations Toggle */}
-                <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
-                  <button
-                    onClick={() => toggleDetails(idx)}
-                    className="text-xs text-emerald-700 hover:text-emerald-800 flex items-center gap-1.5 font-bold transition-colors"
-                  >
-                    <Code2 className="w-3.5 h-3.5" />
-                    <span>{expandedDetails[idx] ? 'Hide Verified Mandi Data Source' : 'View Verified APMC Records & ICAR Research Advisory Sources'}</span>
-                    {expandedDetails[idx] ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
-                  </button>
-                  <span className="text-xs text-slate-500 font-mono font-medium">Confidence: {msg.data.confidence}</span>
-                </div>
+                  {/* Expandable Drawer */}
+                  {expandedDetails[idx] && (
+                    <div className="space-y-3 rounded-xl p-4"
+                         style={{background:'rgba(2,6,23,0.6)', border:'1px solid rgba(255,255,255,0.06)'}}>
 
-                {/* Drawer Contents */}
-                {expandedDetails[idx] && (
-                  <div className="space-y-3 pt-2 bg-slate-50 p-4 rounded-2xl border border-slate-200">
-                    {/* SQL Execution Proof */}
-                    {msg.data.sql_executed && (
-                      <div className="space-y-2">
-                        <div className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
-                          <Database className="w-3.5 h-3.5 text-sky-600" />
-                          <span>Official APMC Database Records Queried:</span>
-                          <span className="text-slate-500 font-mono">({msg.data.sql_executed.count} rows returned)</span>
-                        </div>
-                        <pre className="p-3 rounded-xl bg-slate-900 text-sky-300 font-mono text-xs overflow-x-auto">
-                          {msg.data.sql_executed.sql}
-                        </pre>
-
-                        {/* SQL Record Sample Table */}
-                        {msg.data.sql_executed.records && msg.data.sql_executed.records.length > 0 && (
-                          <div className="overflow-x-auto max-h-48 scrollbar-thin border border-slate-200 rounded-xl bg-white">
-                            <table className="w-full text-left text-xs font-mono">
-                              <thead className="bg-slate-100 text-slate-700 sticky top-0 border-b border-slate-200 font-semibold">
-                                <tr>
-                                  <th className="p-2.5">Date</th>
-                                  <th className="p-2.5">Commodity</th>
-                                  <th className="p-2.5">Market</th>
-                                  <th className="p-2.5">State</th>
-                                  <th className="p-2.5">Modal Price (₹/Ton)</th>
-                                </tr>
-                              </thead>
-                              <tbody className="divide-y divide-slate-100 text-slate-700">
-                                {msg.data.sql_executed.records.slice(0, 5).map((rec, rIdx) => (
-                                  <tr key={rIdx} className="hover:bg-slate-50">
-                                    <td className="p-2.5">{rec.arrival_date}</td>
-                                    <td className="p-2.5 text-emerald-700 font-bold">{rec.commodity}</td>
-                                    <td className="p-2.5 font-medium">{rec.market}</td>
-                                    <td className="p-2.5 text-slate-500">{rec.state}</td>
-                                    <td className="p-2.5 font-bold text-amber-700">₹{(rec.modal_price * 10).toLocaleString('en-IN')}</td>
-                                  </tr>
-                                ))}
-                              </tbody>
-                            </table>
-                          </div>
-                        )}
-                      </div>
-                    )}
-
-                    {/* Advanced RAG Pipeline Inspector */}
-                    {msg.data.advanced_rag_metadata && (
-                      <div className="space-y-2 pt-2 border-t border-slate-200">
-                        <div className="text-xs font-bold text-slate-800 flex items-center justify-between">
-                          <span className="flex items-center gap-1.5 text-indigo-700">
-                            <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
-                            <span>🧠 Advanced RAG Architecture (BM25 + Dense Vector RRF + Re-Ranking):</span>
-                          </span>
-                          <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 border border-indigo-200">
-                            Reciprocal Rank Fusion
-                          </span>
-                        </div>
-
-                        {/* Extracted Scientific Storage Parameters */}
-                        {msg.data.advanced_rag_metadata.extracted_scientific_parameters && (
-                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 text-xs">
-                            <div className="p-2.5 rounded-xl bg-white border border-slate-200 shadow-2xs">
-                              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Optimal Temp</span>
-                              <strong className="text-emerald-700 font-mono text-xs">{msg.data.advanced_rag_metadata.extracted_scientific_parameters.optimal_storage_temperature}</strong>
-                            </div>
-                            <div className="p-2.5 rounded-xl bg-white border border-slate-200 shadow-2xs">
-                              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Relative Humidity</span>
-                              <strong className="text-sky-700 font-mono text-xs">{msg.data.advanced_rag_metadata.extracted_scientific_parameters.optimal_relative_humidity}</strong>
-                            </div>
-                            <div className="p-2.5 rounded-xl bg-white border border-slate-200 shadow-2xs">
-                              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Max Shelf Life</span>
-                              <strong className="text-amber-700 font-mono text-xs">{msg.data.advanced_rag_metadata.extracted_scientific_parameters.maximum_commercial_shelf_life}</strong>
-                            </div>
-                            <div className="p-2.5 rounded-xl bg-white border border-slate-200 shadow-2xs">
-                              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Pathogen Warning</span>
-                              <span className="text-rose-700 font-medium text-[11px] line-clamp-1">{msg.data.advanced_rag_metadata.extracted_scientific_parameters.critical_pathogen_warning}</span>
-                            </div>
-                          </div>
-                        )}
-
-                        {/* Multi-Query Facets */}
-                        {msg.data.advanced_rag_metadata.multi_query_facets && msg.data.advanced_rag_metadata.multi_query_facets.length > 0 && (
-                          <div className="bg-white p-2.5 rounded-xl border border-slate-200 space-y-1">
-                            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">🔍 Multi-Query Expanded Semantic Search Vectors:</span>
-                            <ul className="text-[11px] text-slate-600 space-y-0.5 font-mono list-disc list-inside">
-                              {msg.data.advanced_rag_metadata.multi_query_facets.map((facet, fIdx) => (
-                                <li key={fIdx} className="line-clamp-1">{facet}</li>
-                              ))}
-                            </ul>
-                          </div>
-                        )}
-                      </div>
-                    )}
-
-                    {/* ICAR Citations */}
-                    {msg.data.sources_cited && msg.data.sources_cited.length > 0 && (
-                      <div className="space-y-2 pt-2 border-t border-slate-200">
-                        <div className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
-                          <BookOpen className="w-3.5 h-3.5 text-amber-600" />
-                          <span>ICAR National Research Institutes Agronomic Advisories:</span>
-                        </div>
+                      {msg.data.sql_executed && (
                         <div className="space-y-2">
+                          <div className="flex items-center gap-1.5 text-xs font-bold"
+                               style={{color:'#7dd3fc', fontFamily:"'Space Grotesk',sans-serif"}}>
+                            <Database className="w-3.5 h-3.5" />
+                            APMC Database Records ({msg.data.sql_executed.count} rows)
+                          </div>
+                          <pre className="p-3 rounded-xl text-xs overflow-x-auto"
+                               style={{background:'rgba(2,6,23,0.8)', color:'#67e8f9',
+                                       fontFamily:"'JetBrains Mono',monospace", border:'1px solid rgba(103,232,249,0.15)'}}>
+                            {msg.data.sql_executed.sql}
+                          </pre>
+                          {msg.data.sql_executed.records && msg.data.sql_executed.records.length > 0 && (
+                            <div className="overflow-x-auto rounded-xl" style={{border:'1px solid rgba(255,255,255,0.08)'}}>
+                              <table className="w-full text-xs" style={{fontFamily:"'JetBrains Mono',monospace"}}>
+                                <thead>
+                                  <tr style={{background:'rgba(30,41,59,0.9)', color:'rgba(148,163,184,0.8)',
+                                              borderBottom:'1px solid rgba(255,255,255,0.06)'}}>
+                                    {['Date','Commodity','Market','State','Modal Price'].map(h => (
+                                      <th key={h} className="px-3 py-2 text-left text-[10px] font-bold uppercase tracking-wider">{h}</th>
+                                    ))}
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {msg.data.sql_executed.records.slice(0,5).map((rec, rIdx) => (
+                                    <tr key={rIdx} style={{borderBottom:'1px solid rgba(255,255,255,0.04)',
+                                                           background: rIdx%2===0 ? 'rgba(15,23,42,0.4)' : 'transparent'}}>
+                                      <td className="px-3 py-2" style={{color:'rgba(148,163,184,0.7)'}}>{rec.arrival_date}</td>
+                                      <td className="px-3 py-2 font-bold" style={{color:'#34d399'}}>{rec.commodity}</td>
+                                      <td className="px-3 py-2" style={{color:'rgba(203,213,225,0.8)'}}>{rec.market}</td>
+                                      <td className="px-3 py-2" style={{color:'rgba(100,116,139,0.8)'}}>{rec.state}</td>
+                                      <td className="px-3 py-2 font-bold" style={{color:'#fbbf24'}}>
+                                        ₹{(rec.modal_price*10).toLocaleString('en-IN')}
+                                      </td>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {msg.data.advanced_rag_metadata && (
+                        <div className="space-y-2 pt-2" style={{borderTop:'1px solid rgba(255,255,255,0.05)'}}>
+                          <div className="flex items-center justify-between">
+                            <span className="flex items-center gap-1.5 text-xs font-bold"
+                                  style={{color:'#a5b4fc', fontFamily:"'Space Grotesk',sans-serif"}}>
+                              <Sparkles className="w-3.5 h-3.5" />
+                              Advanced RAG · BM25 + Dense RRF + Re-Ranking
+                            </span>
+                            <span className="text-[10px] px-2 py-0.5 rounded font-bold"
+                                  style={{background:'rgba(99,102,241,0.15)', border:'1px solid rgba(99,102,241,0.3)',
+                                          color:'#a5b4fc', fontFamily:"'JetBrains Mono',monospace"}}>
+                              RRF Fusion
+                            </span>
+                          </div>
+                          {msg.data.advanced_rag_metadata.extracted_scientific_parameters && (
+                            <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
+                              {[
+                                {label:'Optimal Temp', val:msg.data.advanced_rag_metadata.extracted_scientific_parameters.optimal_storage_temperature, color:'#34d399'},
+                                {label:'Rel. Humidity', val:msg.data.advanced_rag_metadata.extracted_scientific_parameters.optimal_relative_humidity, color:'#7dd3fc'},
+                                {label:'Shelf Life', val:msg.data.advanced_rag_metadata.extracted_scientific_parameters.maximum_commercial_shelf_life, color:'#fbbf24'},
+                                {label:'Pathogen Alert', val:msg.data.advanced_rag_metadata.extracted_scientific_parameters.critical_pathogen_warning, color:'#f87171'},
+                              ].map(({label,val,color}) => (
+                                <div key={label} className="p-2.5 rounded-xl"
+                                     style={{background:'rgba(15,23,42,0.7)', border:'1px solid rgba(255,255,255,0.07)'}}>
+                                  <span className="block text-[9px] font-bold uppercase tracking-widest mb-1"
+                                        style={{color:'rgba(100,116,139,0.8)', fontFamily:"'Space Grotesk',sans-serif"}}>
+                                    {label}
+                                  </span>
+                                  <span className="text-xs font-bold" style={{color, fontFamily:"'JetBrains Mono',monospace"}}>
+                                    {val || '—'}
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                          {msg.data.advanced_rag_metadata.multi_query_facets && msg.data.advanced_rag_metadata.multi_query_facets.length > 0 && (
+                            <div className="rounded-xl p-3" style={{background:'rgba(15,23,42,0.6)', border:'1px solid rgba(255,255,255,0.06)'}}>
+                              <span className="block text-[10px] font-bold uppercase tracking-widest mb-1.5"
+                                    style={{color:'rgba(100,116,139,0.7)', fontFamily:"'Space Grotesk',sans-serif"}}>
+                                Multi-Query Expanded Facets
+                              </span>
+                              <ul className="space-y-0.5">
+                                {msg.data.advanced_rag_metadata.multi_query_facets.map((facet, fIdx) => (
+                                  <li key={fIdx} className="text-[11px] line-clamp-1"
+                                      style={{color:'rgba(148,163,184,0.7)', fontFamily:"'JetBrains Mono',monospace"}}>
+                                    › {facet}
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {msg.data.sources_cited && msg.data.sources_cited.length > 0 && (
+                        <div className="space-y-2 pt-2" style={{borderTop:'1px solid rgba(255,255,255,0.05)'}}>
+                          <div className="flex items-center gap-1.5 text-xs font-bold"
+                               style={{color:'#fbbf24', fontFamily:"'Space Grotesk',sans-serif"}}>
+                            <BookOpen className="w-3.5 h-3.5" />
+                            ICAR Research Citations
+                          </div>
                           {msg.data.sources_cited.map((src, sIdx) => (
-                            <div key={sIdx} className="p-3 rounded-xl bg-white border border-slate-200 text-xs space-y-1 shadow-xs">
-                              <div className="flex items-center justify-between text-amber-800 font-bold">
+                            <div key={sIdx} className="p-3 rounded-xl space-y-1"
+                                 style={{background:'rgba(15,23,42,0.6)', border:'1px solid rgba(255,255,255,0.06)'}}>
+                              <div className="flex items-center justify-between text-xs font-bold"
+                                   style={{color:'#fde68a', fontFamily:"'Space Grotesk',sans-serif"}}>
                                 <span>{src.title}</span>
-                                <span className="font-mono text-slate-500 text-[10px]">Match: {((src.relevance_score || 0.9) * 100).toFixed(1)}%</span>
+                                <span style={{color:'rgba(100,116,139,0.7)', fontFamily:"'JetBrains Mono',monospace", fontSize:'10px'}}>
+                                  {((src.relevance_score||0.9)*100).toFixed(1)}% match
+                                </span>
                               </div>
-                              <div className="text-slate-600 leading-relaxed">{src.chunk_text || src.snippet}</div>
-                              <div className="text-slate-500 text-[11px] font-mono flex items-center gap-2 pt-1 border-t border-slate-100">
+                              <div className="text-xs leading-relaxed" style={{color:'rgba(148,163,184,0.75)'}}>
+                                {src.chunk_text || src.snippet}
+                              </div>
+                              <div className="flex items-center gap-2 pt-1 text-[10px]"
+                                   style={{borderTop:'1px solid rgba(255,255,255,0.04)',
+                                           color:'rgba(100,116,139,0.7)', fontFamily:"'JetBrains Mono',monospace"}}>
                                 <span>🏛️ {src.source || 'ICAR National Agricultural Research Protocol'}</span>
-                                <span>&bull;</span>
-                                <span>Verification: Peer-Reviewed Protocol</span>
+                                <span>·</span>
+                                <span>Peer-Reviewed</span>
                               </div>
                             </div>
                           ))}
                         </div>
-                      </div>
-                    )}
-                  </div>
-                )}
+                      )}
+                    </div>
+                  )}
+                </div>
               </div>
             )}
           </div>
@@ -883,43 +907,45 @@ Your AI agronomic economist covering **20+ Fruits, Vegetables, Spices, and Cash 
 
         {loading && (
           <div className="flex items-start">
-            <div className="bg-white border border-slate-200 rounded-2xl p-4 flex items-center gap-3 text-slate-700 text-sm shadow-sm animate-pulse">
-              <Sparkles className="w-5 h-5 text-emerald-600 animate-spin" />
-              <span>Retrieving live APMC spot rates, multi-year seasonal patterns & ICAR protocols...</span>
+            <div className="flex items-center gap-3 px-5 py-3.5 rounded-2xl text-sm"
+                 style={{background:'rgba(15,23,42,0.8)', border:'1px solid rgba(16,185,129,0.25)',
+                         color:'#6ee7b7', backdropFilter:'blur(12px)'}}>
+              <Sparkles className="w-5 h-5 spin-slow" style={{color:'#10b981'}} />
+              <span style={{fontFamily:"'Inter',sans-serif", color:'rgba(148,163,184,0.85)'}}>
+                Retrieving live APMC spot rates &amp; ICAR protocols...
+              </span>
             </div>
           </div>
         )}
       </div>
 
-      {/* 4. Input Bar */}
+      {/* ── SECTION 4: Input Bar ── */}
       <form onSubmit={handleSubmit} className="sticky bottom-4 z-20">
-        <div className="relative flex items-center bg-white border-2 border-slate-300 focus-within:border-emerald-500 focus-within:ring-4 focus-within:ring-emerald-500/15 rounded-2xl shadow-xl p-2 transition-all">
+        <div className="relative flex items-center rounded-2xl p-2 transition-all"
+             style={{background:'rgba(15,23,42,0.9)', backdropFilter:'blur(20px)',
+                     border:'1px solid rgba(16,185,129,0.3)', boxShadow:'0 8px 32px rgba(0,0,0,0.5), 0 0 0 1px rgba(16,185,129,0.1)'}}>
           <input
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Ask anything (e.g. When to sell bananas in AP? / గుంటూరు మిర్చి ధర ఎంత? / திருச்சி வாழை எப்போது விற்கலாம்?)"
-            className="w-full bg-transparent px-4 py-2 text-slate-900 placeholder-slate-400 text-sm focus:outline-none font-medium"
+            placeholder="Ask anything — e.g. When to sell bananas in AP? / గుంటూరు మిర్చి ధర ఎంత? / திருச்சி வாழை?"
+            className="w-full bg-transparent px-4 py-2 text-sm focus:outline-none"
+            style={{color:'#e2e8f0', fontFamily:"'Inter',sans-serif",
+                    caretColor:'#10b981'}}
             disabled={loading}
           />
           <div className="flex items-center gap-1.5 pr-1">
-            <button
-              type="button"
-              onClick={toggleVoice}
-              title={isListening ? 'Stop Voice Recording' : 'Start Voice Input (Telugu / Tamil / Hindi / English)'}
-              className={`p-2.5 rounded-xl transition-all ${
-                isListening
-                  ? 'bg-rose-500 text-white animate-pulse shadow-md shadow-rose-500/30'
-                  : 'bg-slate-100 hover:bg-slate-200 text-slate-700 hover:text-slate-900'
-              }`}
-            >
+            <button type="button" onClick={toggleVoice}
+              className="p-2.5 rounded-xl transition-all"
+              style={isListening
+                ? {background:'rgba(239,68,68,0.2)', border:'1px solid rgba(239,68,68,0.4)', color:'#fca5a5'}
+                : {background:'rgba(30,41,59,0.8)', border:'1px solid rgba(255,255,255,0.08)', color:'#94a3b8'}}>
               {isListening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
             </button>
-            <button
-              type="submit"
-              disabled={loading || !query.trim()}
-              className="p-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 disabled:hover:bg-emerald-600 text-white font-bold transition-all shadow-md shadow-emerald-600/20"
-            >
+            <button type="submit" disabled={loading || !query.trim()}
+              className="p-2.5 rounded-xl font-bold transition-all disabled:opacity-40"
+              style={{background:'linear-gradient(135deg,#065f46,#047857)',
+                      color:'#d1fae5', boxShadow:'0 4px 12px rgba(16,185,129,0.3)'}}>
               <Send className="w-4 h-4" />
             </button>
           </div>
