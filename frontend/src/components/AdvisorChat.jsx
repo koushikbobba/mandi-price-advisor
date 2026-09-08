@@ -93,54 +93,19 @@ export default function AdvisorChat({ externalQuery, onClearExternalQuery, onOpe
   const [selectedCity, setSelectedCity] = useState('Solapur');
   const [selectedCrop, setSelectedCrop] = useState('Pomegranate');
 
-  const [conversation, setConversation] = useState([
-    {
+  const createInitialAdvisory = (cropName) => {
+    const adv = synthesizeClientAdvisory(cropName);
+    return {
       role: 'assistant',
       data: {
-        query: 'Initial Grounded Advisory',
-        detected_language: 'en',
+        ...adv,
         routed_category: 'HYBRID_INTELLIGENCE',
-        routing_reason: 'Enterprise Agricultural AI Initialization',
-        detected_crop: 'Pomegranate',
-        decision_action: 'HOLD',
-        answer: `🎯 **Decision**: **HOLD & STORE** — Projected **+22% to +35%** premium during festive Navratri & Diwali window.\n\n📅 **Best Month to Sell**: March to May (Hasta Bahar) & Sept to Nov (Navratri & Diwali surge)\n📈 **Expected Peak Price**: **₹95,000 – ₹118,000 / Ton**\n📍 **Current Spot Rate**: **₹78,000 / Ton**\n\n💡 **Key Action Points**:\n1. Harvest Bhagwa variety when TSS reaches 15.0–16.5° Brix for maximum sweetness and deep color.\n2. Store at 5.0°C with 90–95% RH for up to 60–75 days commercial shelf life.\n3. Delhi (Azadpur) and Kolkata markets command ₹12,000–18,000/Ton arbitrage premium over local farm-gate.`,
-        confidence: 'HIGH',
-        execution_time_ms: 6,
-        sql_executed: {
-          sql: 'SELECT arrival_date, commodity, market, state, modal_price FROM mandi_spot_prices WHERE commodity="Pomegranate" ORDER BY arrival_date DESC LIMIT 5',
-          count: 5,
-          records: [
-            { arrival_date: '2026-09-08', commodity: 'Pomegranate', market: 'Solapur', state: 'Maharashtra', modal_price: 7800 },
-            { arrival_date: '2026-09-07', commodity: 'Pomegranate', market: 'Nashik', state: 'Maharashtra', modal_price: 7650 },
-            { arrival_date: '2026-09-06', commodity: 'Pomegranate', market: 'Azadpur', state: 'Delhi', modal_price: 9400 },
-            { arrival_date: '2026-09-05', commodity: 'Pomegranate', market: 'Kolkata', state: 'West Bengal', modal_price: 9650 },
-            { arrival_date: '2026-09-04', commodity: 'Pomegranate', market: 'Bengaluru', state: 'Karnataka', modal_price: 8400 }
-          ]
-        },
-        sources_cited: [
-          {
-            title: 'ICAR - National Research Centre on Pomegranate (NRCP), Solapur Protocol',
-            chunk_text: 'Cold store at 5.0°C with 90–95% RH for up to 60–75 days. Spray Copper Oxychloride 0.3% + Streptomycin 500ppm to protect against Xanthomonas bacterial blight.',
-            source: 'ICAR-NRCP Solapur & National Horticulture Board',
-            relevance_score: 0.965
-          }
-        ],
-        advanced_rag_metadata: {
-          extracted_scientific_parameters: {
-            optimal_storage_temperature: '5.0°C (Pre-cool at 5°C with 90-95% RH)',
-            optimal_relative_humidity: '90–95% RH',
-            maximum_commercial_shelf_life: '60–75 Days (Under Cold Chain)',
-            critical_pathogen_warning: '⚠️ Bacterial Blight (Xanthomonas axonopodis pv. punicae) & Cercospora Spot: Spray Copper Oxychloride 0.3% + Streptomycin 500ppm.'
-          },
-          multi_query_facets: [
-            'Pomegranate Bhagwa post-harvest cold storage temperature relative humidity shelf life',
-            'Pomegranate bacterial blight oily spot Xanthomonas management protocols',
-            'Pomegranate mandi terminal arbitrage Solapur Nashik Azadpur Delhi and Kolkata'
-          ]
-        }
+        routing_reason: 'Real-time crop intelligence matrix'
       }
-    }
-  ]);
+    };
+  };
+
+  const [conversation, setConversation] = useState([createInitialAdvisory('Pomegranate')]);
   const [expandedDetails, setExpandedDetails] = useState({ 0: false });
 
   useEffect(() => {
@@ -156,6 +121,14 @@ export default function AdvisorChat({ externalQuery, onClearExternalQuery, onOpe
     if (cities.length > 0) {
       setSelectedCity(cities[0]);
     }
+  };
+
+  const handleCropChange = (newCrop) => {
+    setSelectedCrop(newCrop);
+    setActiveClickedPrompt(null);
+    // Automatically update the main active advisory to match the newly selected crop!
+    setConversation([createInitialAdvisory(newCrop)]);
+    setExpandedDetails({ 0: false });
   };
 
   const currentCropData = CROP_INTELLIGENCE[selectedCrop] || CROP_INTELLIGENCE.Pomegranate;
@@ -470,7 +443,7 @@ export default function AdvisorChat({ externalQuery, onClearExternalQuery, onOpe
                 </span>
               </h2>
               <p className="text-xs mt-0.5" style={{ color: 'rgba(148, 163, 184, 0.85)' }}>
-                Select your State, Mandi &amp; Crop — instantly generates AI holding advisories &amp; profit forecasts
+                Select your State, Mandi &amp; Crop — instantly updates decision recommendations, telemetry &amp; live prices
               </p>
             </div>
           </div>
@@ -502,7 +475,7 @@ export default function AdvisorChat({ externalQuery, onClearExternalQuery, onOpe
             { 
               label: '3. Select Crop', 
               value: selectedCrop, 
-              onChange: (v) => setSelectedCrop(v),
+              onChange: (v) => handleCropChange(v),
               options: CROPS_WITH_ICONS.map(cr => ({ v: cr.name, l: `${cr.icon} ${cr.label}` })) 
             },
           ].map(({ label, value, onChange, options }) => (
@@ -641,7 +614,8 @@ export default function AdvisorChat({ externalQuery, onClearExternalQuery, onOpe
           const cropKey = msg.data.detected_crop || detectCropFromQuery(msg.data.query || '') || selectedCrop || 'Pomegranate';
           const cropInfo = CROP_INTELLIGENCE[cropKey] || CROP_INTELLIGENCE.Pomegranate;
           const params = msg.data.advanced_rag_metadata?.extracted_scientific_parameters || {};
-          const gainDisplay = cropInfo.gain_pct ? (cropInfo.gain_pct.startsWith('+') ? cropInfo.gain_pct : `+${cropInfo.gain_pct}`) : '+25%';
+          const rawGain = cropInfo.gain_pct || '+25%';
+          const gainDisplay = rawGain.startsWith('+') ? rawGain : `+${rawGain}`;
 
           return (
             <div key={idx} className="w-full rounded-3xl overflow-hidden float-in"
