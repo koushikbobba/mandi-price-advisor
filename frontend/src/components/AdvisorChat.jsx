@@ -10,6 +10,7 @@ import {
   Timer, Activity, HelpCircle, Share2, Compass, AlertCircle
 } from 'lucide-react';
 import { synthesizeClientAdvisory, detectCropFromQuery, CROP_INTELLIGENCE } from '../services/advisorEngine';
+import { runGeminiRAG, isGeminiAvailable } from '../services/geminiRAG';
 
 const STATE_MANDI_MAP = {
   'Andhra Pradesh': [
@@ -92,6 +93,8 @@ export default function AdvisorChat({ externalQuery, onClearExternalQuery, onOpe
   const [selectedState, setSelectedState] = useState('Maharashtra');
   const [selectedCity, setSelectedCity] = useState('Solapur');
   const [selectedCrop, setSelectedCrop] = useState('Pomegranate');
+  const [streamingText, setStreamingText] = useState('');
+  const [isStreaming, setIsStreaming] = useState(false);
 
   const createInitialAdvisory = (cropName) => {
     const adv = synthesizeClientAdvisory(cropName);
@@ -380,13 +383,67 @@ export default function AdvisorChat({ externalQuery, onClearExternalQuery, onOpe
   const handleSubmit = async (e, customQuery) => {
     if (e) e.preventDefault();
     const queryToSend = customQuery || query;
-    if (!queryToSend.trim() || loading) return;
+    if (!queryToSend.trim() || loading || isStreaming) return;
 
     const userMsg = { role: 'user', text: queryToSend };
     setConversation(prev => [...prev, userMsg]);
     setQuery('');
     setLoading(true);
 
+    // ── PATH A: Real Gemini RAG (if API key is configured) ───────
+    if (isGeminiAvailable()) {
+      try {
+        // Insert a streaming placeholder message
+        setIsStreaming(true);
+        setStreamingText('');
+        setConversation(prev => [...prev, { role: 'streaming', text: '' }]);
+        setLoading(false);
+
+        let accumulated = '';
+        const { fullText, cropName, data } = await runGeminiRAG(queryToSend, (chunk) => {
+          accumulated += chunk;
+          setStreamingText(accumulated);
+          // Also update the last message in conversation live
+          setConversation(prev => {
+            const updated = [...prev];
+            updated[updated.length - 1] = { role: 'streaming', text: accumulated };
+            return updated;
+          });
+        });
+
+        // Replace streaming placeholder with final structured message
+        const fallbackData = synthesizeClientAdvisory(queryToSend);
+        const assistantMsg = {
+          role: 'assistant',
+          data: {
+            ...fallbackData,
+            answer: fullText,                    // ← real Gemini answer replaces template
+            detected_crop: cropName,
+            routed_category: 'GEMINI_RAG',
+            routing_reason: 'Gemini 1.5 Flash · Retrieved APMC + ICAR context · Streamed',
+            confidence: 'GEMINI_GROUNDED',
+          }
+        };
+        setConversation(prev => {
+          const updated = [...prev];
+          updated[updated.length - 1] = assistantMsg;
+          return updated;
+        });
+        setExpandedDetails(prev => ({ ...prev, [conversation.length + 1]: false }));
+        setIsStreaming(false);
+        setStreamingText('');
+        return;
+      } catch (geminiErr) {
+        console.warn('Gemini RAG failed, falling back to template engine:', geminiErr.message);
+        // Remove streaming placeholder
+        setConversation(prev => prev.filter(m => m.role !== 'streaming'));
+        setIsStreaming(false);
+        setStreamingText('');
+        // Fall through to PATH B
+      }
+    }
+
+    // ── PATH B: Template RAG fallback (no API key or Gemini error) ─
     try {
       const resp = await axios.post('/api/query/', { query: queryToSend, bypass_cache: true });
       const assistantMsg = { role: 'assistant', data: resp.data };
@@ -395,13 +452,13 @@ export default function AdvisorChat({ externalQuery, onClearExternalQuery, onOpe
     } catch (err) {
       console.warn('Using client-side Modular RAG engine:', err.message);
       const fallbackData = synthesizeClientAdvisory(queryToSend);
-      const assistantMsg = { 
-        role: 'assistant', 
+      const assistantMsg = {
+        role: 'assistant',
         data: {
           ...fallbackData,
           routed_category: 'MODULAR_HYBRID_RAG',
           detected_language: fallbackData.language
-        } 
+        }
       };
       setConversation(prev => [...prev, assistantMsg]);
       setExpandedDetails(prev => ({ ...prev, [conversation.length + 1]: false }));
@@ -611,6 +668,46 @@ export default function AdvisorChat({ externalQuery, onClearExternalQuery, onOpe
             );
           }
 
+          // ── Gemini streaming bubble ──────────────────────────────
+          if (msg.role === 'streaming') {
+            return (
+              <div key={idx} className="w-full rounded-3xl overflow-hidden float-in"
+                   style={{
+                     background: 'rgba(15, 23, 42, 0.9)',
+                     border: '1px solid rgba(99, 102, 241, 0.4)',
+                     backdropFilter: 'blur(24px)',
+                     boxShadow: '0 16px 48px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(99, 102, 241, 0.15)'
+                   }}>
+                {/* Header */}
+                <div className="flex items-center gap-3 px-6 py-4"
+                     style={{ borderBottom: '1px solid rgba(255,255,255,0.08)', background: 'linear-gradient(90deg, rgba(67,56,202,0.25) 0%, rgba(15,23,42,0.6) 100%)' }}>
+                  <div className="w-9 h-9 rounded-2xl flex items-center justify-center"
+                       style={{ background: 'linear-gradient(135deg, #3730a3, #4f46e5)', border: '1px solid rgba(99,102,241,0.5)' }}>
+                    <Sparkles className="w-4 h-4 text-indigo-200" />
+                  </div>
+                  <div>
+                    <div className="text-sm font-bold text-white flex items-center gap-2">
+                      Gemini 1.5 Flash
+                      <span className="text-[10px] px-2 py-0.5 rounded-full font-mono font-bold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 flex items-center gap-1">
+                        <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-pulse inline-block" />
+                        LIVE STREAM
+                      </span>
+                    </div>
+                    <div className="text-xs text-slate-400">Retrieving APMC + ICAR context → generating grounded advisory…</div>
+                  </div>
+                </div>
+                {/* Streaming text */}
+                <div className="px-6 py-5">
+                  <div className="text-sm leading-relaxed whitespace-pre-wrap"
+                       style={{ color: 'rgba(226, 232, 240, 0.92)', fontFamily: "'Inter', sans-serif" }}>
+                    {msg.text || ''}
+                    <span className="inline-block w-2 h-4 ml-0.5 bg-indigo-400 rounded-sm animate-pulse align-middle" />
+                  </div>
+                </div>
+              </div>
+            );
+          }
+
           const cropKey = msg.data.detected_crop || detectCropFromQuery(msg.data.query || '') || selectedCrop || 'Pomegranate';
           const cropInfo = CROP_INTELLIGENCE[cropKey] || CROP_INTELLIGENCE.Pomegranate;
           const params = msg.data.advanced_rag_metadata?.extracted_scientific_parameters || {};
@@ -648,16 +745,18 @@ export default function AdvisorChat({ externalQuery, onClearExternalQuery, onOpe
                         Kisan AI · {cropKey} Advisory
                       </span>
                       <span className="text-[10px] px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider"
-                            style={{ background: 'rgba(16, 185, 129, 0.2)', border: '1px solid rgba(16, 185, 129, 0.4)', color: '#6ee7b7', fontFamily: "'JetBrains Mono', monospace" }}>
-                        {msg.data.routed_category || 'MODULAR_HYBRID_RAG'}
+                            style={msg.data.routed_category === 'GEMINI_RAG'
+                              ? { background: 'rgba(99,102,241,0.2)', border: '1px solid rgba(99,102,241,0.45)', color: '#a5b4fc', fontFamily: "'JetBrains Mono', monospace" }
+                              : { background: 'rgba(16, 185, 129, 0.2)', border: '1px solid rgba(16, 185, 129, 0.4)', color: '#6ee7b7', fontFamily: "'JetBrains Mono', monospace" }}>
+                        {msg.data.routed_category === 'GEMINI_RAG' ? '✨ GEMINI GROUNDED' : (msg.data.routed_category || 'MODULAR_HYBRID_RAG')}
                       </span>
                     </div>
                     <div className="flex items-center gap-2 mt-0.5 text-xs text-slate-400 font-mono">
                       <Clock className="w-3 h-3" />
-                      <span>{msg.data.execution_time_ms || 6}ms retrieval</span>
+                      <span>{msg.data.routed_category === 'GEMINI_RAG' ? 'Gemini 1.5 Flash · streamed' : `${msg.data.execution_time_ms || 6}ms retrieval`}</span>
                       <span>•</span>
                       <Globe className="w-3 h-3" />
-                      <span>Confidence: {msg.data.confidence || 'HIGH'} (ICAR + Agmarknet)</span>
+                      <span>{msg.data.routed_category === 'GEMINI_RAG' ? 'APMC + ICAR context injected' : `Confidence: ${msg.data.confidence || 'HIGH'} (ICAR + Agmarknet)`}</span>
                     </div>
                   </div>
                 </div>
