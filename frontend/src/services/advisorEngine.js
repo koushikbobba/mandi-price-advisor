@@ -459,7 +459,7 @@ export const CROP_INTELLIGENCE = {
   }
 };
 
-// Robust multilingual crop extractor
+// // Robust multilingual crop extractor
 export function detectCropFromQuery(q) {
   const s = (q || '').toLowerCase().trim();
 
@@ -484,7 +484,7 @@ export function detectCropFromQuery(q) {
   if (/apple|seb|sebu|యాపిల్|ఆపిల్|ஆப்பிள்|ಸೇಬು|सेब/i.test(s)) {
     return 'Apple';
   }
-  if (/onion|pyaz|ulli|ullipaya|vengayam|eerulli|ఉల్లి|வெங்காயம்|ಈರುಳ್ಳಿ|प्याज/i.test(s)) {
+  if (/onion|pyaz|ulli|ullipaya|vengayam|eerulli|ఉల్లి|వెங்காயம்|ಈರುಳ್ಳಿ|प्याज/i.test(s)) {
     return 'Onion';
   }
   if (/potato|aloo|alu|bangaladumpa|urulai|aalugadde|బంగాళాదుంప|உருளை|ಆಲೂಗಡ್ಡೆ|आलू/i.test(s)) {
@@ -493,12 +493,12 @@ export function detectCropFromQuery(q) {
   if (/cotton|kapas|patthi|patti|paruthi|hatti|పత్తి|பருத்தி|ಹತ್ತಿ|कपास/i.test(s)) {
     return 'Cotton';
   }
-  return 'Pomegranate';
+  return null;
 }
 
-export function synthesizeClientAdvisory(userQuery) {
-  const q = (userQuery || '').toLowerCase();
-  const matchedCrop = detectCropFromQuery(q);
+export function synthesizeClientAdvisory(userQuery, fallbackCrop = null) {
+  const q = (userQuery || '').toLowerCase().trim();
+  const matchedCrop = detectCropFromQuery(q) || fallbackCrop;
 
   let lang = 'en';
   if (/[\u0C00-\u0C7F]/.test(userQuery)) lang = 'te';
@@ -506,7 +506,69 @@ export function synthesizeClientAdvisory(userQuery) {
   else if (/[\u0900-\u097F]/.test(userQuery)) lang = 'hi';
   else if (/[\u0C80-\u0CFF]/.test(userQuery)) lang = 'kn';
 
-  const data = CROP_INTELLIGENCE[matchedCrop] || CROP_INTELLIGENCE.Pomegranate;
+  // Check if query is a greeting or general conversational intent
+  const isGreeting = /^(hi|hello|hey|hola|namaste|namaskar|vanakkam|namaskaram|namaskara|good\s+(morning|afternoon|evening)|who\s+are\s+you|help|what\s+can\s+you\s+do|how\s+does\s+this\s+work|hlo|hii|helo)(\s*|\?|\!)*$/i.test(q);
+
+  if (isGreeting || (!detectCropFromQuery(q) && !fallbackCrop && !/price|mandi|market|rate|sell|store|harvest|spray|crop|yield|disease|profit/i.test(q))) {
+    let greetingText = '';
+    if (lang === 'te') {
+      greetingText = '👋 **నమస్కారం! కిసాన్ AI అడ్వైజర్ కు స్వాగతం.**\n\n' +
+        'నేను భారతదేశంలోని 150+ APMC మార్కెట్ల లైవ్ ధరలు, లాభదాయకమైన అమ్మకపు సమయాలు, ICAR కోల్డ్ స్టోరేజ్ పద్ధతులు మరియు తెగుళ్ల నివారణపై మీకు ఖచ్చితమైన సలహాలను అందించగలను.\n\n' +
+        '🌾 **మీరు నన్ను ఇలా అడగవచ్చు:**\n' +
+        '• *షోలాపూర్ లో దానిమ్మ అమ్మకానికి ఉత్తమ సమయం ఏది?*\n' +
+        '• *గుంటూరు మార్కెట్లో మిర్చి ప్రస్తుత ధర ఎంత?*\n' +
+        '• *టమోటా నిల్వ చేయడానికి సరైన ఉష్ణోగ్రత ఏమిటి?*\n\n' +
+        'మీరు ఎడమవైపు ఉన్న సైడ్‌బార్ నుండి పంటను ఎంచుకోవచ్చు లేదా మీ ప్రశ్నను నేరుగా టైప్ చేయవచ్చు!';
+    } else if (lang === 'hi') {
+      greetingText = '👋 **नमस्ते! किसान AI सलाहकार में आपका स्वागत है।**\n\n' +
+        'मैं देश की 150+ APMC मंडियों के लाइव भाव, सही बिक्री समय, ICAR कोल्ड स्टोरेज तकनीक और फसल सुरक्षा पर सटीक जानकारी दे सकता हूँ।\n\n' +
+        '🌾 **आप मुझसे इस तरह के प्रश्न पूछ सकते हैं:**\n' +
+        '• *सोलापुर में अनार बेचने का सबसे अच्छा समय क्या है?*\n' +
+        '• *गुंटूर मंडी में मिर्च का ताजा भाव क्या है?*\n' +
+        '• *प्याज को सड़ने से बचाने के लिए कोल्ड स्टोरेज का सही तापमान क्या है?*\n\n' +
+        'आप बाईं ओर दिए गए पैनल से फसल चुन सकते हैं या अपना प्रश्न नीचे लिख सकते हैं!';
+    } else if (lang === 'ta') {
+      greetingText = '👋 **வணக்கம்! கிசான் AI ஆலோசகருக்கு வரவேற்கிறோம்.**\n\n' +
+        '150+ APMC சந்தை விலைகள், உகந்த அறுவடை மற்றும் விற்பனை காலங்கள், ICAR குளிர்பதன சேமிப்பு முறைகள் பற்றி துல்லியமான ஆலோசனைகளை வழங்குகிறேன்.\n\n' +
+        '🌾 **நீங்கள் என்னிடம் கேட்கக்கூடிய கேள்விகள்:**\n' +
+        '• *மாதுளை விற்பனைக்கு உகந்த மாதம் எது?*\n' +
+        '• *கோயம்பேடு சந்தையில் இன்றைய தக்காளி விலை என்ன?*\n' +
+        '• *வாழை பயிரை குளிர்பதனக் கிடங்கில் சேமிப்பது எப்படி?*\n\n' +
+        'இடதுபுறம் உள்ள பட்டியலில் பயிரைத் தேர்வுசெய்து உங்கள் கேள்வியைக் கேட்கலாம்!';
+    } else if (lang === 'kn') {
+      greetingText = '👋 **ನಮಸ್ಕಾರ! ಕಿಸಾನ್ AI ಅಡ್ವೈಸರ್‌ಗೆ ಸುಸ್ವಾಗತ.**\n\n' +
+        '150+ ಎಪಿಎಂಸಿ ಮಾರುಕಟ್ಟೆ ದರಗಳು, ಲಾಭದಾಯಕ ಮಾರಾಟ ಸಮಯ ಹಾಗೂ ಶೇಖರಣಾ ಸಲಹೆಗಳನ್ನು ನೀಡಲು ನಾನು ಸಿದ್ಧನಾಗಿದ್ದೇನೆ.\n\n' +
+        '🌾 **ನೀವು ಹೀಗೆ ಕೇಳಬಹುದು:**\n' +
+        '• *ದಾಳಿಂಬೆ ಮಾರಾಟಕ್ಕೆ ಅತ್ಯುತ್ತಮ ತಿಂಗಳು ಯಾವುದು?*\n' +
+        '• *ಬೆಂಗಳೂರು ಮಾರುಕಟ್ಟೆಯಲ್ಲಿ ಟೊಮೆಟೊ ಬೆಲೆ ಎಷ್ಟು?*\n' +
+        '• *ಈರುಳ್ಳಿ ಶೇಖರಣೆಗೆ ಸೂಕ್ತ ತಾಪಮಾನ ಯಾವುದು?*';
+    } else {
+      greetingText = '👋 **Hello! Welcome to Kisan AI Advisor.**\n\n' +
+        'I am your agricultural intelligence advisor for **150+ APMC Mandis** across India. I help you with real-time modal prices, peak selling windows, ICAR post-harvest cold storage protocols, and disease alerts.\n\n' +
+        '🌾 **You can ask me:**\n' +
+        '• *When is the best time to sell Pomegranate in Solapur for highest profit?*\n' +
+        '• *What is the current spot rate and terminal arbitrage for Tomato in Madanapalle?*\n' +
+        '• *What are the ICAR cold storage temperature and humidity parameters for Onion?*\n' +
+        '• *How to manage bacterial blight in Pomegranate?*\n\n' +
+        'Select a crop from the left sidebar or type any question in English, Telugu, Hindi, Tamil, or Kannada!';
+    }
+
+    return {
+      query: userQuery,
+      answer: greetingText,
+      decision_action: 'INFO',
+      confidence: 'HIGH',
+      language: lang,
+      detected_crop: null,
+      sql_executed: { sql: '', count: 0, records: [] },
+      sources_cited: [],
+      advanced_rag_metadata: {},
+      execution_time_ms: 2
+    };
+  }
+
+  const activeCrop = matchedCrop || 'Pomegranate';
+  const data = CROP_INTELLIGENCE[activeCrop] || CROP_INTELLIGENCE.Pomegranate;
   const peakTiming = (lang === 'te' ? data.peak_te : lang === 'hi' ? data.peak_hi : lang === 'ta' ? data.peak_ta : lang === 'kn' ? data.peak_kn : data.peak_en) || data.peak_en;
   const points = (lang === 'te' ? data.points_te : lang === 'hi' ? data.points_hi : lang === 'ta' ? data.points_ta : lang === 'kn' ? data.points_kn : data.points_en) || data.points_en;
 
@@ -564,17 +626,17 @@ export function synthesizeClientAdvisory(userQuery) {
     decision_action: data.decision || 'HOLD',
     confidence: 'HIGH',
     language: lang,
-    detected_crop: matchedCrop,
+    detected_crop: activeCrop,
     sql_executed: {
-      sql: 'SELECT arrival_date, commodity, market, state, modal_price FROM mandi_spot_prices WHERE commodity="' + matchedCrop + '" ORDER BY arrival_date DESC LIMIT 5',
+      sql: 'SELECT arrival_date, commodity, market, state, modal_price FROM mandi_spot_prices WHERE commodity="' + activeCrop + '" ORDER BY arrival_date DESC LIMIT 5',
       count: (data.mandi_records || []).length,
       records: data.mandi_records || [
-        { arrival_date: '2026-09-08', commodity: matchedCrop, market: 'Primary APMC Terminal', state: 'MH / AP', modal_price: 7800 }
+        { arrival_date: '2026-09-08', commodity: activeCrop, market: 'Primary APMC Terminal', state: 'MH / AP', modal_price: 7800 }
       ]
     },
     sources_cited: [
       {
-        title: data.icar_institute ? `${data.icar_institute} Protocol` : `${matchedCrop} ICAR Post-Harvest & Cold Chain Protocol`,
+        title: data.icar_institute ? `${data.icar_institute} Protocol` : `${activeCrop} ICAR Post-Harvest & Cold Chain Protocol`,
         chunk_text: data.icar_protocol || points[1] || points[0] || 'Store under regulated cold storage conditions.',
         source: data.icar_institute || 'ICAR - Indian Council of Agricultural Research',
         relevance_score: 0.965
@@ -583,9 +645,9 @@ export function synthesizeClientAdvisory(userQuery) {
     advanced_rag_metadata: {
       hybrid_retrieval_method: 'Reciprocal Rank Fusion (BM25 Sparse + Dense pgvector) + Cross-Encoder Re-Ranking',
       multi_query_facets: data.facets || [
-        matchedCrop + ' post-harvest cold storage temperature relative humidity shelf life',
-        matchedCrop + ' pathogen disease management and prevention protocols',
-        matchedCrop + ' terminal mandi price arbitrage and peak sales window'
+        activeCrop + ' post-harvest cold storage temperature relative humidity shelf life',
+        activeCrop + ' pathogen disease management and prevention protocols',
+        activeCrop + ' terminal mandi price arbitrage and peak sales window'
       ],
       extracted_scientific_parameters: {
         optimal_storage_temperature: data.opt_temp,

@@ -33,18 +33,19 @@ export function isGeminiAvailable() {
 }
 
 // ── 2. Build rich retrieval context from CROP_INTELLIGENCE ─────
-function buildRetrievedContext(query) {
-  const cropName = detectCropFromQuery(query);
-  const data = CROP_INTELLIGENCE[cropName];
+function buildRetrievedContext(query, selectedCrop = null) {
+  const cropName = detectCropFromQuery(query) || (selectedCrop && /price|mandi|market|rate|sell|store|harvest|spray|crop|yield|disease|profit/i.test(query) ? selectedCrop : null);
+  const data = cropName ? CROP_INTELLIGENCE[cropName] : null;
 
   if (!data) {
     // Generic fallback context — lists all known crops & prices
     const summary = Object.entries(CROP_INTELLIGENCE)
-      .map(([name, d]) => `${name}: spot=${d.spot_price}, peak=${d.peak_price}, decision=${d.decision}`)
+      .map(([name, d]) => `• ${name}: Spot price=${d.spot_price}, Peak price=${d.peak_price}, Peak season=${d.peak_en}, Recommended decision=${d.decision}`)
       .join('\n');
     return {
-      cropName: 'General',
-      contextText: `Available crops with current market data:\n${summary}`,
+      cropName: null,
+      contextText: `Available crops supported in database with verified APMC & ICAR benchmarks:\n${summary}`,
+      data: null
     };
   }
 
@@ -86,22 +87,19 @@ KEY EXPERT ADVISORY POINTS:
 }
 
 // ── 3. System prompt that grounds Gemini strictly to retrieved data ─
-const SYSTEM_PROMPT = `You are an expert Indian agricultural market advisor integrated into the "Mandi Price Advisor" platform.
+const SYSTEM_PROMPT = `You are "Kisan AI Advisor", an expert agricultural market & price intelligence assistant for 150+ APMC Mandis in India.
 
 CRITICAL RULES:
-1. Answer ONLY using the information in the "RETRIEVED DOCUMENT" provided. Do NOT invent prices, dates or schemes.
-2. Always quote exact prices from the document (e.g., ₹78,000/Ton). Never round them differently.
-3. Keep your answer under 200 words — farmers need crisp, actionable advice.
-4. Always end with one clear action: SELL NOW / HOLD & STORE / WAIT FOR FESTIVAL SEASON.
-5. If the query is in Telugu/Hindi/Tamil/Kannada, respond in that same language.
-6. Include relevant emojis sparingly (✅ ⚠️ 📅 💰 🌾) to improve readability.
-7. Never mention "Gemini", "AI", "language model" or any technical details.
-8. Structure your response:
-   - 🎯 Decision (1 sentence)
-   - 💰 Price snapshot (spot vs peak)
-   - 📅 Best selling window
-   - 💡 Top 2 action tips
-   - ⚠️ Risk alert (if applicable)`;
+1. If the user's message is a greeting (e.g. "hi", "hello", "namaste", "vanakkam") or a general conversation, greet them politely in the language they used (English, Telugu, Hindi, Tamil, Kannada) and briefly explain what you can do (APMC mandi prices, selling time advice, ICAR storage protocols, disease management). Give 2-3 quick examples of questions they can ask.
+2. If the user asks about a crop, price, market, or agricultural decision:
+   - Base your factual claims (prices, storage temps, months) strictly on the "RETRIEVED DOCUMENT".
+   - Quote exact prices (e.g., ₹78,000/Ton). Never fabricate arbitrary figures.
+   - Keep answers clear, structured with markdown (bold, bullet points, headers).
+   - End with a clear recommendation (e.g., SELL NOW / HOLD & STORE / MONITOR TERMINAL MANDIS).
+3. If the user's query is in Telugu, Hindi, Tamil, or Kannada, respond fluently in that exact regional language.
+4. Maintain a warm, encouraging, and authoritative tone suitable for Indian farmers and traders.
+5. Use emojis tastefully (🌾 💰 📅 ⚠️ ✅) to enhance readability.
+6. Do not mention system internals, raw code, or prompts.`;
 
 // ── 4. Main RAG function — streams token-by-token ──────────────
 /**
@@ -110,16 +108,16 @@ CRITICAL RULES:
  * Throws if Gemini is unavailable.
  *
  * @param {string} userQuery
- * @param {{ cropName, contextText, data }} retrieved
  * @param {(chunk: string) => void} onChunk
+ * @param {string} [selectedCrop]
  * @returns {Promise<{ fullText: string, cropName: string, data: object }>}
  */
-export async function runGeminiRAG(userQuery, onChunk) {
+export async function runGeminiRAG(userQuery, onChunk, selectedCrop = null) {
   const geminiModel = getModel();
   if (!geminiModel) throw new Error('GEMINI_KEY_MISSING');
 
   // Step 1 — Retrieve
-  const retrieved = buildRetrievedContext(userQuery);
+  const retrieved = buildRetrievedContext(userQuery, selectedCrop);
 
   // Step 2 — Augment: build the full prompt
   const fullPrompt = `${SYSTEM_PROMPT}
